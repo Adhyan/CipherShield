@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Encryption // CipherShield</title>
+<meta name="description" content="Compare Base64, ROT13, Vigenere and XOR against the classical Caesar cipher.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<canvas id="matrix-canvas" aria-hidden="true"></canvas>
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<header class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="brand">
+      <span class="brand-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2 L4 6 v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </span>
+      <span class="brand-text">Cipher<span class="accent-green">Shield</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="nav-link">Dashboard</a>
+      <a href="/modern" class="nav-link active">Modern Encryption</a>
+      <a href="/#learning" class="nav-link">Learn</a>
+    </nav>
+    <div class="navbar-actions">
+      <span class="live-badge"><span class="live-dot"></span>SYSTEM ONLINE</span>
+      <button id="theme-toggle" class="icon-btn" title="Toggle dark/light theme (Shift+T)" aria-label="Toggle theme">
+        <svg id="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <svg id="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<section class="hero hero-compact">
+  <div class="hero-grid-lines" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>MODULE 02 &mdash; BEYOND THE CAESAR SHIFT</div>
+    <h1 class="hero-title">Four more ciphers.<br>One honest comparison.</h1>
+    <p class="hero-sub">
+      Base64 isn't encryption. ROT13 is a Caesar cipher in disguise. Vigenere and XOR raise the bar
+      &mdash; but only if you respect the key. See exactly where each one stands.
+    </p>
+  </div>
+</section>
+
+<!-- ============ BASE64 ============ -->
+<section class="panel" id="base64">
+  <div class="panel-header">
+    <h2><span class="mono-tag">01</span> Base64 Encode / Decode</h2>
+    <p class="panel-desc">An encoding scheme for safely transmitting binary data as text &mdash; not encryption.</p>
+  </div>
+  <div class="glass-card tool-card">
+    <textarea id="base64-input" class="terminal-textarea" rows="3" placeholder="Enter text to encode or decode" spellcheck="false"></textarea>
+    <div class="action-row">
+      <button class="btn btn-primary" data-b64-mode="encode">Encode</button>
+      <button class="btn btn-outline" data-b64-mode="decode">Decode</button>
+      <button class="btn btn-ghost copy-btn" data-target="base64-output">Copy Result</button>
+    </div>
+    <textarea id="base64-output" class="terminal-textarea" rows="3" readonly placeholder="Result appears here"></textarea>
+  </div>
+</section>
+
+<!-- ============ ROT13 ============ -->
+<section class="panel" id="rot13">
+  <div class="panel-header">
+    <h2><span class="mono-tag">02</span> ROT13</h2>
+    <p class="panel-desc">A fixed Caesar shift of 13 &mdash; famous for being its own inverse.</p>
+  </div>
+  <div class="glass-card tool-card">
+    <textarea id="rot13-input" class="terminal-textarea" rows="3" placeholder="Enter text to transform" spellcheck="false"></textarea>
+    <div class="action-row">
+      <button class="btn btn-primary" id="rot13-run">Transform</button>
+      <button class="btn btn-ghost copy-btn" data-target="rot13-output">Copy Result</button>
+    </div>
+    <textarea id="rot13-output" class="terminal-textarea" rows="3" readonly placeholder="Result appears here"></textarea>
+    <p class="hint-text">Tip: running ROT13 on its own output returns your original text.</p>
+  </div>
+</section>
+
+<!-- ============ VIGENERE ============ -->
+<section class="panel" id="vigenere">
+  <div class="panel-header">
+    <h2><span class="mono-tag">03</span> Vigenere Cipher</h2>
+    <p class="panel-desc">A polyalphabetic cipher &mdash; the shift changes with every letter of a keyword.</p>
+  </div>
+  <div class="glass-card tool-card">
+    <textarea id="vigenere-input" class="terminal-textarea" rows="3" placeholder="Enter text" spellcheck="false"></textarea>
+    <div class="control-row">
+      <div class="key-control">
+        <label for="vigenere-key">Keyword</label>
+        <input type="text" id="vigenere-key" class="text-input" placeholder="e.g. SHIELD" maxlength="256">
+      </div>
+      <div class="mode-toggle" role="tablist" aria-label="Vigenere mode">
+        <button class="mode-btn active" data-vig-mode="encrypt" role="tab" aria-selected="true">Encrypt</button>
+        <button class="mode-btn" data-vig-mode="decrypt" role="tab" aria-selected="false">Decrypt</button>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-primary" id="vigenere-run">Run</button>
+      <button class="btn btn-ghost copy-btn" data-target="vigenere-output">Copy Result</button>
+    </div>
+    <textarea id="vigenere-output" class="terminal-textarea" rows="3" readonly placeholder="Result appears here"></textarea>
+  </div>
+</section>
+
+<!-- ============ XOR ============ -->
+<section class="panel" id="xor">
+  <div class="panel-header">
+    <h2><span class="mono-tag">04</span> XOR Encryption</h2>
+    <p class="panel-desc">Bitwise XOR against a repeating key. Output shown as hexadecimal.</p>
+  </div>
+  <div class="glass-card tool-card">
+    <textarea id="xor-input" class="terminal-textarea" rows="3" placeholder="Plaintext to encrypt, or hex ciphertext to decrypt" spellcheck="false"></textarea>
+    <div class="control-row">
+      <div class="key-control">
+        <label for="xor-key">Key</label>
+        <input type="text" id="xor-key" class="text-input" placeholder="e.g. shield-key" maxlength="256">
+      </div>
+      <div class="mode-toggle" role="tablist" aria-label="XOR mode">
+        <button class="mode-btn active" data-xor-mode="encrypt" role="tab" aria-selected="true">Encrypt</button>
+        <button class="mode-btn" data-xor-mode="decrypt" role="tab" aria-selected="false">Decrypt</button>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-primary" id="xor-run">Run</button>
+      <button class="btn btn-ghost copy-btn" data-target="xor-output">Copy Result</button>
+    </div>
+    <textarea id="xor-output" class="terminal-textarea" rows="3" readonly placeholder="Result appears here"></textarea>
+  </div>
+</section>
+
+<!-- ============ COMPARISON ============ -->
+<section class="panel" id="compare">
+  <div class="panel-header">
+    <h2><span class="mono-tag">05</span> Side-by-Side Comparison</h2>
+    <p class="panel-desc">Run one plaintext through every algorithm at once, including AES for reference.</p>
+  </div>
+  <div class="glass-card tool-card">
+    <textarea id="compare-input" class="terminal-textarea" rows="3" placeholder="Enter text to compare across all algorithms" spellcheck="false"></textarea>
+    <div class="action-row">
+      <button class="btn btn-primary" id="compare-run">Compare All Algorithms</button>
+    </div>
+  </div>
+  <div class="compare-table-wrap glass-card">
+    <table class="compare-table" id="compare-table">
+      <thead>
+        <tr>
+          <th>Algorithm</th>
+          <th>Output</th>
+          <th>Security</th>
+          <th>Key Space</th>
+          <th>Likely Attack</th>
+          <th>Time to Crack</th>
+        </tr>
+      </thead>
+      <tbody id="compare-tbody">
+        <tr class="empty-row"><td colspan="6" class="empty-state">Run a comparison to populate this table.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <p>CipherShield &mdash; built as a cybersecurity portfolio project. Educational use only.</p>
+  <p class="footer-links"><a href="/">&larr; Back to Dashboard</a></p>
+</footer>
+
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
