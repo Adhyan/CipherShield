@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CipherShield // Caesar Cipher Toolkit</title>
+<meta name="description" content="CipherShield - an advanced Caesar cipher encryption, decryption and cryptanalysis toolkit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- Matrix rain canvas background -->
+<canvas id="matrix-canvas" aria-hidden="true"></canvas>
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<!-- ============ NAVBAR ============ -->
+<header class="navbar">
+  <div class="navbar-inner">
+    <a href="/" class="brand">
+      <span class="brand-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2 L4 6 v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </span>
+      <span class="brand-text">Cipher<span class="accent-green">Shield</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="nav-link active">Dashboard</a>
+      <a href="/modern" class="nav-link">Modern Encryption</a>
+      <a href="#learning" class="nav-link">Learn</a>
+    </nav>
+    <div class="navbar-actions">
+      <span class="live-badge"><span class="live-dot"></span>SYSTEM ONLINE</span>
+      <button id="theme-toggle" class="icon-btn" title="Toggle dark/light theme (Shift+T)" aria-label="Toggle theme">
+        <svg id="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <svg id="theme-icon-sun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-grid-lines" aria-hidden="true"></div>
+  <div class="hero-content">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>ASSIGNMENT: SUBSTITUTION CIPHERS &mdash; SHIFT-BASED ENCRYPTION</div>
+    <h1 class="hero-title">
+      Every letter has a secret<br>
+      it can't keep for long.
+    </h1>
+    <p class="hero-sub">
+      CipherShield encrypts and decrypts text with a classical Caesar shift, then turns around
+      and shows you exactly how to break it &mdash; character by character, key by key.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span class="hero-stat-value" data-count="25">0</span>
+        <span class="hero-stat-label">Possible Keys</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value" data-count="26">0</span>
+        <span class="hero-stat-label">Letters Mapped</span>
+      </div>
+      <div class="hero-stat">
+        <span class="hero-stat-value" data-count="0" data-suffix="ms">0</span>
+        <span class="hero-stat-label">Avg. Crack Time</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signature element: interactive Caesar Wheel -->
+  <div class="cipher-wheel-wrap">
+    <div class="cipher-wheel" id="cipher-wheel">
+      <svg id="wheel-svg" viewBox="0 0 360 360" width="340" height="340">
+        <circle cx="180" cy="180" r="176" class="wheel-outer-ring"/>
+        <g id="outer-letters"></g>
+        <circle cx="180" cy="180" r="118" class="wheel-inner-disc"/>
+        <g id="inner-letters" class="wheel-inner-group"></g>
+        <circle cx="180" cy="180" r="34" class="wheel-hub"/>
+        <text x="180" y="185" class="wheel-hub-text" id="wheel-shift-label">+3</text>
+      </svg>
+    </div>
+    <p class="wheel-caption">Drag the inner ring or use the shift slider below</p>
+  </div>
+</section>
+
+<!-- ============ MAIN TOOLKIT ============ -->
+<section class="panel" id="toolkit">
+  <div class="panel-header">
+    <h2><span class="mono-tag">01</span> Encrypt &amp; Decrypt Console</h2>
+    <p class="panel-desc">Type or paste text, choose a shift key, and watch the transformation happen live.</p>
+  </div>
+
+  <div class="console-grid">
+    <div class="glass-card console-card">
+      <div class="card-row">
+        <label for="input-text">Input Text</label>
+        <span class="char-count" id="input-char-count">0 chars</span>
+      </div>
+      <textarea id="input-text" class="terminal-textarea" rows="6" maxlength="10000"
+        placeholder="Type something to encrypt, e.g. THE EAGLE LANDS AT MIDNIGHT" spellcheck="false"></textarea>
+
+      <div class="control-row">
+        <div class="shift-control">
+          <label for="shift-slider">Shift Key: <span id="shift-value">3</span></label>
+          <input type="range" id="shift-slider" min="1" max="25" value="3" step="1">
+        </div>
+        <div class="mode-toggle" role="tablist" aria-label="Cipher mode">
+          <button class="mode-btn active" data-mode="encrypt" role="tab" aria-selected="true">Encrypt</button>
+          <button class="mode-btn" data-mode="decrypt" role="tab" aria-selected="false">Decrypt</button>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button id="run-cipher-btn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Run Cipher
+          <kbd>Ctrl+Enter</kbd>
+        </button>
+        <button id="reset-btn" class="btn btn-ghost">Reset</button>
+      </div>
+    </div>
+
+    <div class="glass-card console-card">
+      <div class="card-row">
+        <label for="output-text">Output</label>
+        <span class="output-status" id="output-status">Awaiting input&hellip;</span>
+      </div>
+      <textarea id="output-text" class="terminal-textarea" rows="6" readonly placeholder="Your result will appear here"></textarea>
+
+      <div class="action-row">
+        <button class="btn btn-outline copy-btn" data-target="output-text">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>
+        <div class="export-dropdown">
+          <button class="btn btn-outline" id="export-toggle">Export <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="export-menu" id="export-menu">
+            <button data-format="txt">Download as .TXT</button>
+            <button data-format="json">Download as .JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live character mapping -->
+  <div class="glass-card mapping-card">
+    <h3 class="card-title">Live Character Mapping</h3>
+    <p class="card-subtext">Every letter of the alphabet, mapped through the current shift.</p>
+    <div class="mapping-strip" id="mapping-strip"></div>
+  </div>
+</section>
+
+<!-- ============ VISUALIZER ============ -->
+<section class="panel" id="visualizer">
+  <div class="panel-header">
+    <h2><span class="mono-tag">02</span> Encryption Visualizer</h2>
+    <p class="panel-desc">The arithmetic behind every character, animated one card at a time.</p>
+  </div>
+  <div class="visualizer-track" id="visualizer-track">
+    <div class="empty-state">Run the cipher above to see each character's transformation.</div>
+  </div>
+</section>
+
+<!-- ============ STEP BY STEP EXPLANATION ============ -->
+<section class="panel" id="explanation">
+  <div class="panel-header">
+    <h2><span class="mono-tag">03</span> Step-by-Step Explanation</h2>
+    <p class="panel-desc">The same transformation, explained in plain English.</p>
+  </div>
+  <div class="glass-card">
+    <ol class="explanation-list" id="explanation-list">
+      <li class="empty-state">Run the cipher to generate an explanation.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ BRUTE FORCE ============ -->
+<section class="panel" id="bruteforce">
+  <div class="panel-header">
+    <h2><span class="mono-tag">04</span> Brute Force Mode</h2>
+    <p class="panel-desc">No key? No problem. Try all 25 shifts and let the analyzer flag the readable ones.</p>
+  </div>
+  <div class="glass-card">
+    <div class="card-row">
+      <label for="bruteforce-input">Ciphertext to crack</label>
+    </div>
+    <textarea id="bruteforce-input" class="terminal-textarea" rows="3" placeholder="Paste ciphertext here, e.g. WKH HDJOH ODQGV DW PLGQLJKW" spellcheck="false"></textarea>
+    <div class="action-row">
+      <button id="bruteforce-btn" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Crack It
+      </button>
+    </div>
+    <div class="bruteforce-results" id="bruteforce-results">
+      <div class="empty-state">Results will list all 25 possible decryptions, ranked by likelihood.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FREQUENCY ANALYSIS ============ -->
+<section class="panel" id="frequency">
+  <div class="panel-header">
+    <h2><span class="mono-tag">05</span> Frequency Analysis</h2>
+    <p class="panel-desc">Why the Caesar cipher can't hide from statistics.</p>
+  </div>
+  <div class="frequency-grid">
+    <div class="glass-card">
+      <h3 class="card-title">Plaintext Letter Frequency</h3>
+      <canvas id="chart-plaintext" height="220"></canvas>
+    </div>
+    <div class="glass-card">
+      <h3 class="card-title">Ciphertext Letter Frequency</h3>
+      <canvas id="chart-ciphertext" height="220"></canvas>
+    </div>
+  </div>
+  <div class="glass-card callout-card">
+    <svg class="callout-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    <p><strong>Why this matters:</strong> a Caesar shift never changes the <em>shape</em> of the letter-frequency
+    curve &mdash; it only rotates it. Because English always favors letters like E and T, an attacker can
+    line up the ciphertext's most common letter with the expected peak and read off the key almost
+    instantly, without ever trying all 25 shifts by hand.</p>
+  </div>
+</section>
+
+<!-- ============ SECURITY SCORE ============ -->
+<section class="panel" id="security-score">
+  <div class="panel-header">
+    <h2><span class="mono-tag">06</span> Security Score</h2>
+    <p class="panel-desc">An honest report card, generated after every run.</p>
+  </div>
+  <div class="glass-card security-card severity-critical" id="security-card">
+    <div class="security-grid">
+      <div class="security-item">
+        <span class="security-label">Algorithm</span>
+        <span class="security-value" id="sec-algorithm">Caesar Cipher</span>
+      </div>
+      <div class="security-item">
+        <span class="security-label">Security</span>
+        <span class="security-value severity-tag" id="sec-security">Very Low</span>
+      </div>
+      <div class="security-item">
+        <span class="security-label">Key Space</span>
+        <span class="security-value" id="sec-keyspace">25</span>
+      </div>
+      <div class="security-item">
+        <span class="security-label">Likely Attack</span>
+        <span class="security-value" id="sec-attack">Brute Force</span>
+      </div>
+      <div class="security-item">
+        <span class="security-label">Time to Crack</span>
+        <span class="security-value" id="sec-time">Instant</span>
+      </div>
+    </div>
+    <div class="threat-meter">
+      <div class="threat-meter-fill" id="threat-meter-fill"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HISTORY ============ -->
+<section class="panel" id="history">
+  <div class="panel-header">
+    <h2><span class="mono-tag">07</span> Session History</h2>
+    <p class="panel-desc">Every run this session, most recent first. Nothing leaves your browser.</p>
+    <button id="clear-history-btn" class="btn btn-ghost btn-small">Clear History</button>
+  </div>
+  <div class="history-table-wrap glass-card">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Mode</th>
+          <th>Shift</th>
+          <th>Original</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody id="history-tbody">
+        <tr class="empty-row"><td colspan="5" class="empty-state">No history yet &mdash; run the cipher to get started.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ LEARNING SECTION ============ -->
+<section class="panel" id="learning">
+  <div class="panel-header">
+    <h2><span class="mono-tag">08</span> Learn the Fundamentals</h2>
+    <p class="panel-desc">The concepts behind the console, for anyone reading the code for the first time.</p>
+  </div>
+  <div class="learn-grid">
+
+    <details class="learn-card glass-card" open>
+      <summary>What is Encryption?</summary>
+      <p>Encryption is the process of converting readable data (plaintext) into an unreadable
+      form (ciphertext) using an algorithm and a key, so that only someone with the right key
+      can reverse the process and read the original message.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>What is Decryption?</summary>
+      <p>Decryption is the reverse of encryption: taking ciphertext and, using the correct key
+      and algorithm, recovering the original plaintext exactly as it was before encryption.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>Symmetric Encryption</summary>
+      <p>Symmetric encryption uses the <em>same</em> key to both encrypt and decrypt data. It's
+      fast and efficient, which is why it's used for bulk data (like AES), but both parties need
+      a secure way to share that one key in advance.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>Asymmetric Encryption</summary>
+      <p>Asymmetric encryption uses a mathematically linked key pair: a public key to encrypt,
+      and a private key to decrypt. Anyone can encrypt a message for you using your public key,
+      but only you can read it. This solves the key-sharing problem symmetric encryption has.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>Caesar Cipher History</summary>
+      <p>Named after Julius Caesar, who reportedly used a shift of three to protect military
+      communications, the Caesar cipher is one of the earliest recorded encryption techniques
+      and a foundational example in the study of cryptography.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>Why the Caesar Cipher Fails</summary>
+      <p>With only 25 possible keys, a computer can try every single one instantly. Worse, the
+      cipher preserves letter-frequency patterns, so even without brute force, basic statistics
+      reveal the key almost immediately. It offers effectively zero real-world security today.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>AES Overview</summary>
+      <p>The Advanced Encryption Standard is a symmetric block cipher operating on 128-bit blocks
+      with 128, 192, or 256-bit keys. Adopted by the U.S. government in 2001, it remains the
+      global standard for securing everything from Wi-Fi traffic to disk encryption.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>RSA Overview</summary>
+      <p>RSA is an asymmetric algorithm whose security rests on how computationally difficult it
+      is to factor the product of two very large prime numbers. It's widely used for secure key
+      exchange and digital signatures, typically alongside a faster symmetric cipher for bulk data.</p>
+    </details>
+
+    <details class="learn-card glass-card">
+      <summary>When Is Each Algorithm Used?</summary>
+      <p>Classical ciphers like Caesar or Vigenere are taught for their historical and educational
+      value, not for real protection. AES secures bulk data at rest and in transit. RSA (or elliptic
+      curve variants) handles key exchange and identity verification, often working together with
+      AES in protocols like TLS to combine speed with secure key sharing.</p>
+    </details>
+
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <p>CipherShield &mdash; built as a cybersecurity portfolio project. Educational use only.</p>
+  <p class="footer-links"><a href="/modern">Modern Encryption Module</a></p>
+</footer>
+
+<!-- Toast container -->
+<div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
